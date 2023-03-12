@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenAI Chatbot Example</title>
+  </head>
+  <body>
+    <div id="chatbot-container">
+      <div id="chatlog"></div>
+      <form onsubmit="return sendMessage();">
+        <input type="text" id="message" placeholder="Type your message here..." />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@openai/api@0.5.0/dist/openai-api.min.js"></script>
+    <script>
+      const openai = new OpenAI();
+      openai.setAuth({
+        username: "YOUR_USERNAME",
+        password: "YOUR_PASSWORD",
+      });
+      const chatlog = document.querySelector("#chatlog");
+
+      function sendMessage() {
+        const messageInput = document.querySelector("#message");
+        const message = messageInput.value.trim();
+        messageInput.value = "";
+
+        // Add user message to chatlog
+        addMessageToChatlog(message, true);
+
+        // Send message to OpenAI and add response to chatlog
+        openai.complete({
+          engine: "text-davinci-002",
+          prompt: message,
+          maxTokens: 50,
+          n: 1,
+          stop: "\n",
+        }).then((response) => {
+          const chatbotResponse = response.choices[0].text.trim();
+          addMessageToChatlog(chatbotResponse, false);
+        });
+
+        return false;
+      }
+
+      function addMessageToChatlog(message, isUserMessage) {
+        const messageClass = isUserMessage ? "user-message" : "chatbot-message";
+        const messageElement = document.createElement("div");
+        messageElement.classList.add(messageClass);
+        messageElement.innerText = message;
+        chatlog.appendChild(messageElement);
+      }
+      
+      const trainingData = fs.readFileSync('path/to/training/data.txt', 'utf8');
+      
+      // Train your model
+      openai.train({
+        model: 'text-davinci-002',
+        documents: trainingData,
+        epochs: 5,
+        batchSize: 10,
+        learningRate: 0.0001,
+      }).then((response) => {
+        console.log(response);
+      }).catch((error) => {
+        console.error(error);
+      });
+    </script>
+  </body>
+</html>
