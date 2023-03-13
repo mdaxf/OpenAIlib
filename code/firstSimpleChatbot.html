@@ -7,22 +7,37 @@
   <body>
     <div id="chatbot-container">
       <div id="chatlog"></div>
-      <form onsubmit="return sendMessage();">
+      <div>
         <input type="text" id="message" placeholder="Type your message here..." />
-        <button type="submit">Send</button>
-        <input type="button" obclick="trainingchatbot();">Training</button>
-      </form>
+        <input type="button" onclick="sendMessage();" value="Send"></input>
+        <input type="button" onclick="trainingchatbot();" value="Training"></input>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@openai/api@0.5.0/dist/openai-api.min.js"></script>
     <script>
-      const openai = new OpenAI();
-      openai.setAuth({
-        username: "YOUR_USERNAME",
-        password: "YOUR_PASSWORD",
-      });
-      const chatlog = document.querySelector("#chatlog");
+      var apiKey = 'Api_key';
+      var chatlog = document.querySelector("#chatlog");
+      var baseUrl = 'https://api.openai.com';
+      var defaultVersion = 'v1';
+      var apiEndpoint = baseUrl + '/'+ defaultVersion + '/engines';
+      var engine = 'text-davinci-002';
+      var engines
+      try{
+        fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer '+ apiKey
+            }
+          })
+          .then(response => {response.json(); console.log(response)})
+          .then(data => {console.log(data); engines = data});
+      }
+      catch(e){
 
+        console.log(e)
+      }
+      
       function sendMessage() {
         const messageInput = document.querySelector("#message");
         const message = messageInput.value.trim();
@@ -30,20 +45,28 @@
 
         // Add user message to chatlog
         addMessageToChatlog(message, true);
-
-        // Send message to OpenAI and add response to chatlog
-        openai.complete({
-          engine: "text-davinci-002",
-          prompt: message,
-          maxTokens: 50,
-          n: 1,
-          stop: "\n",
-        }).then((response) => {
-          const chatbotResponse = response.choices[0].text.trim();
-          addMessageToChatlog(chatbotResponse, false);
+             
+        fetch('https://api.openai.com/v1/engines/'+engine+'/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer '+ apiKey
+          },
+          body: JSON.stringify({
+            prompt: message,
+            max_tokens: 100,
+            n: 1,
+            stop: '\n',
+            temperature: 0.7
+          })
+        }).then(response => {
+          return response.json();
+        }).then(data => {
+          addMessageToChatlog(data.choices[0].text, true);
+          console.log(data.choices[0].text);
+        }).catch(error => {
+          console.error(error);
         });
-
-        return false;
       }
 
       function addMessageToChatlog(message, isUserMessage) {
@@ -58,7 +81,7 @@
         const trainingData = fs.readFileSync('path/to/training/data.txt', 'utf8');
 
         // Train your model
-        openai.train({
+      /*  openai.train({
           model: 'text-davinci-002',
           documents: trainingData,
           epochs: 5,
@@ -68,7 +91,7 @@
           console.log(response);
         }).catch((error) => {
           console.error(error);
-        });
+        });  */
       }
     </script>
   </body>
