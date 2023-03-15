@@ -1,0 +1,2 @@
+MES    Manufacturing Execution System
+MOM    Manufacturing Operation Management System
