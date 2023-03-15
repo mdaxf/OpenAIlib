@@ -12,11 +12,12 @@ class OpenAI{
         this.url = this.baseUrl +'/' + version;
     
     }
-    getEngines(successcallback, failcallback) {
-        this.request('/engines', 'GET',null,successcallback, failcallback);
+    getmodels(successcallback, failcallback) {
+        //this.request('/engines', 'GET',null,successcallback, failcallback);
+      this.request('/models', 'GET',null,successcallback, failcallback);
     }
-    getEngine(engine,successcallback, failcallback) {
-        this.request(`/engines/${engine}`, 'GET',null,successcallback, failcallback);
+    getmodel(engine,successcallback, failcallback) {
+        this.request(`/models/${engine}`, 'GET',null,successcallback, failcallback);
     }
     search(engine, message, successcallback,failcallback,completecallback) {
         var body = JSON.stringify({
@@ -36,7 +37,7 @@ class OpenAI{
             stop: '\n',
             stream: true
           });
-      this.requestwithStream(`/engines/${engine}/classifications`, 'POST', body, successcallback,failcallback,completecallback);
+      this.requestwithStream(`/engines/${model}/classifications`, 'POST', body, successcallback,failcallback,completecallback);
     }
     answer(message) {
       var body = JSON.stringify({
@@ -46,11 +47,20 @@ class OpenAI{
             stop: '\n',
             stream: true
           });
-      this.requestwithStream(`/engines/${engine}/answers`, 'POST', body, successcallback,failcallback,completecallback);
+      this.requestwithStream(`/engines/${model}/answers`, 'POST', body, successcallback,failcallback,completecallback);
     }
   
-    complete(engine, body, successcallback, failcallback,completecallback) {
-        this.requestwithStream(`/engines/${engine}/completions`, 'POST', body, successcallback,failcallback,completecallback);
+    complete(model, body, successcallback, failcallback,completecallback) {
+      if(body){
+        if(typeof body === "string"){          
+          body = JSON.parse(body);          
+        }
+        body.stream = true;
+      //  body.model = model;
+      }        
+
+      
+        this.requestwithStream(`/engines/${model}/completions`, 'POST', body, successcallback,failcallback,completecallback);
     }
   
    getFiles() {
@@ -80,11 +90,11 @@ class OpenAI{
         return this.request(`/files/${fileId}`, 'DELETE');
     }
 
-    finetune(body) {
-        return this.request(`/fine-tunes`, 'POST', body);
+    finetune(body,successcallback, failcallback,completecallback) {
+        return this.requestwithStream(`/fine-tunes`, 'POST', body, successcallback, failcallback,completecallback);
     }
     getFinetunes() {
-        return this.request('/fine-tunes', 'GET').then((r) => r.data);
+        return this.request('/fine-tunes', 'GET');
     }
     getFinetune(finetuneId) {
         return this.request(`/fine-tunes/${finetuneId}`, 'GET');
@@ -96,11 +106,16 @@ class OpenAI{
         return this.request(`/fine-tunes/${finetuneId}/events`, 'GET').then((r) => r.data);
     }
     createEmbedding(engine, body) {
-        return this.request(`/engines/${engine}/embeddings`, 'POST', body);
+        return this.requestwithStream(`/engines/${engine}/embeddings`, 'POST', body, successcallback, failcallback,completecallback);
     }  
     async request(path, method, body,successcallback,failcallback){
-      if(body)
+      if(body){
+        if(typeof body === "string"){          
+          body = JSON.parse(body);          
+        }
         body.stream = false;
+        body = JSON.stringify(body);
+      }
       
       await fetch(this.url+path, {
           method: method,
@@ -161,14 +176,18 @@ class OpenAI{
             
           })
       }
-
-      if(body)
-        JSON.parse(body).stream = true;
       
+      if(body){
+        if(typeof body === "string"){          
+          body = JSON.parse(body);          
+        }
+        body.stream = true;
+      }
+      console.log(body)
       await fetch(this.url+path, {
           method: method,
           headers: this.headers,
-          body: body
+          body: JSON.stringify(body)
         }).then(response => {
           if(!response.ok && typeof failcallback === 'function'){
               failcallback(response);
