@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenAI Chatbot Example</title>
+  </head>
+  <body>
+    <div id="chatbot-container">
+      <div id="chatlog"></div>
+      <div>
+        <input type="text" id="message" placeholder="Type your message here..." />
+        <input type="button" id="send" onclick="sendMessage();" value="Send"></input>
+        <input type="button" onclick="trainingchatbot();" value="Training"></input>
+      </div>
+    </div>
+    <script type = "text/javascript" src="openailib.js" ></script>
+
+    <script>
+      var apiKey = '[api_key]';
+      var openai = new OpenAI(apiKey, 'v1')
+      var engine = 'text-davinci-002'; //'davinci';//
+      var messageElement = document.createElement("div");
+      chatlog.appendChild(messageElement);
+          messageElement = document.createElement("div");
+          messageElement.classList.add("chatbot-message");
+          messageElement.innerText = "Answer:";
+          chatlog.appendChild(messageElement);
+      console.log(openai);
+
+      openai.getEngine(engine,ShowData,completeAnswer,completeAnswer );
+      openai.getEngines(ShowData,completeAnswer,completeAnswer );
+      
+      function sendMessage(){
+        const messageInput = document.querySelector("#message");
+        const message = messageInput.value.trim();
+        messageInput.value = "";
+
+        // Add user message to chatlog
+        addMessageToChatlog(message, true);
+        var body = JSON.stringify({
+            prompt: message,
+            max_tokens: 100,
+            n: 1,
+            stop: '\n',
+            stream: true
+          });
+        openai.complete(engine, body,ShowData,completeAnswer,completeAnswer );
+      //  console.log(result.data);
+
+      }
+      
+      function ShowData(Message){
+        addMessageToChatlog(Message,false);
+        
+      }
+      function completeAnswer(){
+        document.querySelector("#message").disabled = false;
+        document.querySelector("#send").disabled = false;
+      }
+      function addMessageToChatlog(message, isUserMessage) {
+        const messageClass = isUserMessage ? "user-message" : "chatbot-message";
+        if(messageClass == 'user-message'){
+          var messageElement = document.createElement("div");
+          messageElement.classList.add(messageClass);
+          messageElement.innerText = message;
+          chatlog.appendChild(messageElement);
+          messageElement = document.createElement("div");
+          messageElement.classList.add("chatbot-message");
+          messageElement.innerText = "Answer:";
+          chatlog.appendChild(messageElement);
+          document.querySelector("#message").disabled = true;
+          document.querySelector("#send").disabled = true;
+        }
+        else{
+            var responsetxt = chatlog.lastChild.innerText + message
+            chatlog.lastChild.innerText = responsetxt;          
+        }
+      }
+ 
+      function trainingchatbot(){
+        var trainingData = fetch('/training/data.txt')
+          .then(response =>  response.text())
+          .then(data => {console.log(data); return data; })
+          .catch(error => console.error(error));
+        
+          openai.finetune({
+                            model: 'text-davinci-002',
+                            documents: trainingData,
+                            epochs: 5,
+                            batchSize: 10,
+                            learningRate: 0.0001          
+                          })
+      
+      } 
+    </script>
+  </body>
+</html>
