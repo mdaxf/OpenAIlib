@@ -1,2 +1,2 @@
-MES    Manufacturing Execution System
-MOM    Manufacturing Operation Management System
+{"prompt": "MES", "completion": "Manufacturing Execution System"}
+{"prompt": "MOM", "completion": "Manufacturing Operation Management System"}
