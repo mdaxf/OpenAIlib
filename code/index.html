@@ -1,61 +1,101 @@
-<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>OpenAI Chatbot Example</title>
+    <title>Create Cover letter for the Job description</title>
+    <script type = "text/javascript" src="openailib.js" ></script>
+    <style>
+      .chatbot-message{
+          display:flex;
+          width:100%;
+          margin: 10px 0;
+          padding: 10px;
+          border: 1px solid #ccc;
+          background-color: #f9f9f9;
+      
+      }  
+    </style>
   </head>
   <body>
     <div id="chatbot-container">
       <div id="chatlog"></div>
-      <div>
-        <input type="text" id="message" placeholder="Type your message here..." />
-        <input type="button" id="send" onclick="sendMessage();" value="Send"></input>
-        <input type="button" onclick="trainingchatbot();" value="Training"></input>
-      </div>
+      <textarea id="jobdescription" rows="10"  style="width:100%"></textarea>
+      <!--div id="filedrop" style="width:100%;height:100px;">
+        <input type="file" id="selectfile" />
+    </div -->
+      <textarea id="resume" rows="10" style="width:100%"></textarea>
+      <input type="button" id="generator" value="Cover letter" onclick="generatecoverletter()">
+      <input type="button" id="createinterview" value="Prepare Interview" onclick="generateinterview()">
     </div>
-    <script type = "text/javascript" src="openailib.js" ></script>
 
     <script>
-      var apiKey = '[api_key]';
+      var apiKey = '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';
       var openai = new OpenAI(apiKey, 'v1')
-      var engine = 'text-davinci-002'; //'davinci';//
+      var engine = 'text-davinci-003'; //'davinci';//
       var messageElement = document.createElement("div");
       chatlog.appendChild(messageElement);
-          messageElement = document.createElement("div");
-          messageElement.classList.add("chatbot-message");
-          messageElement.innerText = "Answer:";
-          chatlog.appendChild(messageElement);
-      console.log(openai);
-
-      openai.getmodel(engine,ShowData,completeAnswer,completeAnswer );
-      openai.getmodels(ShowData,completeAnswer,completeAnswer );
-      
-      function sendMessage(){
-        const messageInput = document.querySelector("#message");
-        const message = messageInput.value.trim();
-        messageInput.value = "";
-
-        // Add user message to chatlog
-        addMessageToChatlog(message, true);
+      messageElement = document.createElement("div");
+      messageElement.classList.add("chatbot-message");
+      messageElement.innerText = "";
+      chatlog.appendChild(messageElement);
+      const JDInput = document.querySelector("#jobdescription");
+      const ResumeInput = document.querySelector("#jobdescription");
+    
+      function generateinterview(){
+        const JobDescription = JDInput.value.trim();
+        const Resume = ResumeInput.value.trim();
+        var prompt = 'I an a candidate and want to interview the following job. Please create a interview papare for the following Job Deescription. Please list the common interview questions first and then have some special interview questions or tips for the company and job. And please have some example answer for each question according attached resume.'+ ' \n' 
+            prompt += ' Job Description: ' +   JobDescription + ' \n'  
+            prompt += ' Resume: ' +   Resume + ' \n'  
+        addMessageToChatlog(JobDescription,true);
+        addMessageToChatlog(Resume,true);
         var body = JSON.stringify({
-            prompt: message,
-            max_tokens: 100,
+            prompt: prompt,
+            max_tokens: 1000,
+            temperature: 0.1,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
             n: 1,
-            stop: '\n',
             stream: true
           });
-        openai.complete(engine, body,ShowData,completeAnswer,completeAnswer );
-      //  console.log(result.data);
-
+          console.log(body)
+        openai.complete(engine, body,ShowData,showerror,completeAnswer );
+        
       }
-      
+      function generatecoverletter(){
+        
+        const JobDescription = JDInput.value.trim();
+        const Resume = ResumeInput.value.trim();
+        var prompt = 'Please create a professional cover letter for the attached job description and resume. The cover letter must be professional without grammer error.'+ ' \n' 
+            prompt += ' Job Description: ' +   JobDescription + ' \n'  
+            prompt += ' Resume: ' +   Resume + ' \n'  
+        addMessageToChatlog(JobDescription,true);
+        addMessageToChatlog(Resume,true);          
+        var body = JSON.stringify({
+            prompt: prompt,
+            max_tokens: 1000,
+            temperature: 0.1,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            n: 1,
+            stream: true
+          });
+          console.log(body)
+        openai.complete(engine, body,ShowData,showerror,completeAnswer );
+      }
       function ShowData(Message){
         addMessageToChatlog(Message,false);
         
       }
+      function showerror(message){
+      //  console.log(message);
+        ShowData(message)
+        completeAnswer();
+      }
       function completeAnswer(){
-        document.querySelector("#message").disabled = false;
-        document.querySelector("#send").disabled = false;
+      //  document.querySelector("#message").disabled = false;
+        document.querySelector("#generator").disabled = false;
       }
       function addMessageToChatlog(message, isUserMessage) {
         const messageClass = isUserMessage ? "user-message" : "chatbot-message";
@@ -66,32 +106,16 @@
           chatlog.appendChild(messageElement);
           messageElement = document.createElement("div");
           messageElement.classList.add("chatbot-message");
-          messageElement.innerText = "Answer:";
+          messageElement.innerText = "";
           chatlog.appendChild(messageElement);
-          document.querySelector("#message").disabled = true;
-          document.querySelector("#send").disabled = true;
+        //  document.querySelector("#message").disabled = true;
+          document.querySelector("#generator").disabled = true;
         }
         else{
             var responsetxt = chatlog.lastChild.innerText + message
             chatlog.lastChild.innerText = responsetxt;          
         }
       }
- 
-      function trainingchatbot(){
-        var trainingData = fetch('/training/data.txt')
-          .then(response =>  response.text())
-          .then(data => {console.log(data); return data; })
-          .catch(error => console.error(error));
-        
-          openai.finetune({
-                            model: 'text-davinci-002',
-                            documents: trainingData,
-                            epochs: 5,
-                            batchSize: 10,
-                            learningRate: 0.0001          
-                          })
-      
-      } 
     </script>
   </body>
 </html>
